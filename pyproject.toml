@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "myocardial-mesh"
+version = "0.1.0"
+description = "Ventricular myocardial mesh construction for ECG and FIM simulation"
+authors = [
+  {name = "Ricardo García Ramírez", email = "rgr.5882@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+
+keywords = ["mesh", "myocardial", "ECG", "FIM", "vtk", "pyvista", "simulation", "biomedical"]
+
+dependencies = [
+    "numpy",
+    "scipy",
+    "vtk",
+    "pyvista",
+    "meshio",
+    "fimpy"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/ricardogr07/purkinje-learning-myocardial-mesh"
+"Repository" = "https://github.com/ricardogr07/purkinje-learning-myocardial-mesh"
+
+[tool.setuptools]
+packages = ["myocardial_mesh"]
+package-dir = {"" = "src"}
