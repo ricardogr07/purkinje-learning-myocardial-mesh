@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def Bmatrix(pts: np.ndarray, elm: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """
     Computes the strain-displacement matrix (B-matrix) and the determinant of the Jacobian for a tetrahedral finite element.
@@ -15,8 +16,8 @@ def Bmatrix(pts: np.ndarray, elm: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """
     nodeCoords = np.moveaxis(pts[elm, :], 0, -1)
 
-    # NOTE: The definition of the parent tetrahedron by Hughes - "The Finite Element Method" (p. 170) is different from the 
-    # local order given by VTK (http://victorsndvg.github.io/FEconv/formats/vtk.xhtml) 
+    # NOTE: The definition of the parent tetrahedron by Hughes - "The Finite Element Method" (p. 170) is different from the
+    # local order given by VTK (http://victorsndvg.github.io/FEconv/formats/vtk.xhtml)
     # Here we follow the VTK convention
 
     x1 = nodeCoords[0, 0, :]
@@ -66,6 +67,7 @@ def Bmatrix(pts: np.ndarray, elm: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     )
     B = Jinv.T @ B_def[..., :]
     return B, detJ
+
 
 def localStiffnessMatrix(B: np.ndarray, J: np.ndarray, G: np.ndarray) -> np.ndarray:
     """

@@ -15,7 +15,7 @@ def test_Bmatrix_output_shape_and_detJ_sign():
 
     B, detJ = Bmatrix(pts, elm)
 
-    assert B.shape == (3, 4, 1)
+    assert B.shape == (1, 3, 4)
     assert detJ.shape == (1,)
     assert detJ[0] > 0
 
@@ -55,7 +55,7 @@ def test_Bmatrix_and_localStiffnessMatrix():
     B, detJ = Bmatrix(pts, elm)
 
     # Check expected shape and types
-    assert B.shape == (3, 4, 1)
+    assert B.shape == (1, 3, 4)
     assert detJ.shape == (1,)
     assert detJ[0] > 0  # Valid tetrahedron should have positive volume
 
