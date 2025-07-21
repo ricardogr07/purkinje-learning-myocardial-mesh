@@ -11,7 +11,7 @@ authors = [
 ]
 readme = "README.md"
 requires-python = ">=3.8"
-license = {text = "MIT"}
+license = "MIT"
 
 keywords = ["mesh", "myocardial", "ECG", "FIM", "vtk", "pyvista", "simulation", "biomedical"]
 
@@ -21,7 +21,7 @@ dependencies = [
     "vtk",
     "pyvista",
     "meshio",
-    "fimpy"
+    "fim-python",
 ]
 
 [project.urls]
