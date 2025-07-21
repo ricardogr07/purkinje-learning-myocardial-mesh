@@ -1,13 +1,16 @@
 import numpy as np
 from myocardial_mesh.geometry_utils import Bmatrix, localStiffnessMatrix
 
+
 def test_Bmatrix_output_shape_and_detJ_sign():
-    pts = np.array([
-        [0.0, 0.0, 0.0],
-        [1.0, 0.0, 0.0],
-        [0.0, 1.0, 0.0],
-        [0.0, 0.0, 1.0],
-    ])
+    pts = np.array(
+        [
+            [0.0, 0.0, 0.0],
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.0, 1.0],
+        ]
+    )
     elm = np.array([[0, 1, 2, 3]])
 
     B, detJ = Bmatrix(pts, elm)
@@ -16,13 +19,16 @@ def test_Bmatrix_output_shape_and_detJ_sign():
     assert detJ.shape == (1,)
     assert detJ[0] > 0
 
+
 def test_localStiffnessMatrix_row_sum_near_zero():
-    pts = np.array([
-        [0.0, 0.0, 0.0],
-        [1.0, 0.0, 0.0],
-        [0.0, 1.0, 0.0],
-        [0.0, 0.0, 1.0],
-    ])
+    pts = np.array(
+        [
+            [0.0, 0.0, 0.0],
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.0, 1.0],
+        ]
+    )
     elm = np.array([[0, 1, 2, 3]])
     B, detJ = Bmatrix(pts, elm)
     G = np.tile(np.eye(3), (1, 1, 1))
@@ -32,14 +38,17 @@ def test_localStiffnessMatrix_row_sum_near_zero():
     row_sums = K[0].sum(axis=1)
     assert np.allclose(row_sums, np.zeros(4), atol=1e-12)
 
+
 def test_Bmatrix_and_localStiffnessMatrix():
     # Define a single tetrahedral element with known coordinates
-    pts = np.array([
-        [0.0, 0.0, 0.0],  # Node 0
-        [1.0, 0.0, 0.0],  # Node 1
-        [0.0, 1.0, 0.0],  # Node 2
-        [0.0, 0.0, 1.0],  # Node 3
-    ])
+    pts = np.array(
+        [
+            [0.0, 0.0, 0.0],  # Node 0
+            [1.0, 0.0, 0.0],  # Node 1
+            [0.0, 1.0, 0.0],  # Node 2
+            [0.0, 0.0, 1.0],  # Node 3
+        ]
+    )
     elm = np.array([[0, 1, 2, 3]])  # One element with 4 nodes
 
     # Compute B and detJ
