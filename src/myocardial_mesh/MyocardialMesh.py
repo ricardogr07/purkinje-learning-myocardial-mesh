@@ -457,12 +457,23 @@ class MyocardialMesh:
             aux_int_l[electrode_name]  = np.sum(Gi_nodal_T * r_norm3, axis = 1) # ok
         
         return aux_int_l
-    
+       
     def get_lead_field(self):
-        aux_int_l = {}
-        for electrode_name, electrode_coords in self.electrode_pos.items():
-            r       = self.xyz - np.array(electrode_coords)
+        """
+        Compute or retrieve the lead field for each electrode.
+        If a precomputed dictionary (lead_fields_dict) is provided, return it.
+        Otherwise, compute it from electrode positions.
+        """
 
-            aux_int_l[electrode_name]  = 1 / np.linalg.norm(r, axis = 1) # ok
-        
-        return aux_int_l
+        if self.lead_fields_dict is not None:
+            return self.lead_fields_dict
+
+        elif self.electrode_pos is not None:
+            aux_int_l = {}
+            for electrode_name, electrode_coords in self.electrode_pos.items():
+                r = self.xyz - np.array(electrode_coords)
+                aux_int_l[electrode_name] = 1 / np.linalg.norm(r, axis=1)  # V/m
+            return aux_int_l
+
+        else:
+            raise RuntimeError("Neither 'electrode_pos' nor 'lead_fields_dict' was provided.")
