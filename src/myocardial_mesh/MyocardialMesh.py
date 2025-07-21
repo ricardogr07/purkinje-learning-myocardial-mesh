@@ -334,6 +334,10 @@ class MyocardialMesh:
     def new_get_ecg(self, record_array = True):
         "Obtain ecg from activation times"
         
+        if self.lead_field is None:
+            raise RuntimeError("Cannot compute ECG: 'lead_field' is not defined. "
+                               "Provide either 'electrodes_position' or 'lead_fields_dict' when initializing MyocardialMesh.")
+
         # read activation
         dd    = dsa.WrapDataObject(self.vtk_mesh)
         u     = dd.PointData['activation'] # n_nodes values
