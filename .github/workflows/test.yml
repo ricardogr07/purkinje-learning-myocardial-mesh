@@ -3,8 +3,6 @@ name: Build, Lint, and Test
 on:
   pull_request:
     branches: [main]
-  push:
-    branches: [main]
 
 jobs:
   tox:
@@ -13,7 +11,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: [3.10, 3.12]
+        python-version: ["3.10.6", "3.12.3"]
 
     steps:
       - uses: actions/checkout@v4
@@ -27,4 +25,7 @@ jobs:
         run: pip install tox
 
       - name: Run tox
-        run: tox -e py${{ matrix.python-version }} lint
+        run: |
+          version=${{ matrix.python-version }}
+          version_nodot=${version//./}
+          tox -e py${version_nodot},lint
