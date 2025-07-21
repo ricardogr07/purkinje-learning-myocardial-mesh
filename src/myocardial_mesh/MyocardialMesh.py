@@ -445,6 +445,9 @@ class MyocardialMesh:
     def new_get_ecg_aux_Vl(self):
         "Find Gi.T * grad(Z_l), that can be computed once"
 
+        if self.electrode_pos is None:
+            raise RuntimeError("Cannot compute ECG auxiliary field: 'electrode_pos' is not defined.")
+
         dd  = dsa.WrapDataObject(self.vtk_mesh)
         xyz = dd.Points
         
