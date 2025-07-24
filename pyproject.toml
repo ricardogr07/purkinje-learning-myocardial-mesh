@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "myocardial-mesh"
-version = "0.1.0"
+version = "0.1.1"
 description = "Ventricular myocardial mesh construction for ECG and FIM simulation"
 authors = [
   {name = "Ricardo García Ramírez", email = "rgr.5882@gmail.com"}
