@@ -171,8 +171,10 @@ class MyocardialMesh:
         )
         # self.D   = alpha/np.sqrt(beta) * Gm # Units?
         self.D = alpha**2 / beta * Gm * 100.0  # mm^2/ms^2
-        
-        logger.info(f"Conduction velocity along fibers: {np.sqrt(alpha**2/beta * sigma_ml * 100.):.3f} m/s")
+
+        logger.info(
+            f"Conduction velocity along fibers: {np.sqrt(alpha**2/beta * sigma_ml * 100.):.3f} m/s"
+        )
 
         # normalize l_nodes
         l_nodes_norms = np.linalg.norm(fiber_node_vectors, axis=1, keepdims=True)
