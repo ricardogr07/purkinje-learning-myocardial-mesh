@@ -4,6 +4,7 @@ from vtkmodules.numpy_interface import dataset_adapter as dsa
 from fimpy.solver import FIMPY
 import meshio
 import time
+import logging
 
 import pyvista as pv
 import pickle
@@ -11,6 +12,9 @@ from scipy.spatial.distance import cdist
 
 from scipy import sparse
 from .geometry_utils import Bmatrix, localStiffnessMatrix
+
+
+logger = logging.getLogger(__name__)
 
 
 class MyocardialMesh:
@@ -167,8 +171,9 @@ class MyocardialMesh:
         )
         # self.D   = alpha/np.sqrt(beta) * Gm # Units?
         self.D = alpha**2 / beta * Gm * 100.0  # mm^2/ms^2
-        print(
-            f"Conduction velocity in the direction of the fibers: {np.sqrt(alpha**2/beta * sigma_ml * 100.)} m/s"
+
+        logger.info(
+            f"Conduction velocity along fibers: {np.sqrt(alpha**2/beta * sigma_ml * 100.):.3f} m/s"
         )
 
         # normalize l_nodes
@@ -190,7 +195,7 @@ class MyocardialMesh:
             @ l_cell[:, np.newaxis, :]
         )  # mS cm^-1
 
-        print("assembling Laplacian")
+        logger.info("Assembling Laplacian")
         self.K = self.assemble_K(self.xyz, self.cells, self.Gi_cell)
 
         # ECG-related (optional)
@@ -207,13 +212,13 @@ class MyocardialMesh:
         # dd.PointData.append(l_nodes,"l_nodes")
         # self.save_pv("test_fibers.vtu")
 
-        print("initializing FIM solver")
+        logger.info("Initializing FIM solver")
         start_time = time.time()
         cells = dd.Cells.reshape((-1, 5))[
             :, 1:
         ]  # tetra, dd.Cells includes the type of element
         self.fim = FIMPY.create_fim_solver(self.xyz, cells, self.D, device=device)
-        print(time.time() - start_time)
+        logger.debug(f"FIM solver initialization took {time.time() - start_time:.3f} s")
 
     def assemble_K(self, pts, elm, Gi):
 
@@ -295,7 +300,7 @@ class MyocardialMesh:
         x_proj = [0.0, 0.0, 0.0]
         dist = vtk.reference(0.0)
 
-        print("computing closest nodes to PMJs")
+        logger.info("Computing closest nodes to PMJs")
         start_time = time.time()
 
         for k in range(x0.shape[0]):
@@ -309,15 +314,15 @@ class MyocardialMesh:
             v = xyz[cell_pts, :] - x0[[k], :]
             new_act = x0_vals[k] + np.sqrt(np.einsum("ij,kj,ki->k", Gcell, v, v))
             act[cell_pts] = np.minimum(new_act, act[cell_pts])
-        print(time.time() - start_time)
+        logger.debug(f"Closest PMJs computation took {time.time() - start_time:.3f} s")
 
         # solve in the rest of the tissue
         x0 = np.isfinite(act)  # fimpy can receive it as int (index ids) or boolean
         x0_vals = act[x0]
-        print("solving")
+        logger.info("Solving activation")
         start_time = time.time()
         act = self.fim.comp_fim(x0, x0_vals)  # activation in xyz
-        print(time.time() - start_time)
+        logger.debug(f"Solve stage took {time.time() - start_time:.3f} s")
 
         # update activation in VTK
         if self.device == "gpu":
