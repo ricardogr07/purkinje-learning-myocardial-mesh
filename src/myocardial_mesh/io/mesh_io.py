@@ -20,7 +20,7 @@ class WriteMethod(str, Enum):
 
 
 class MeshIO:
-    """Unified interface to write VTK-compatible meshes."""
+    """Unified interface to read and write VTK-compatible meshes."""
 
     @staticmethod
     def write(
