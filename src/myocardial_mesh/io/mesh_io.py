@@ -2,6 +2,7 @@ import logging
 from enum import Enum
 from pathlib import Path
 from typing import Optional, Any
+import warnings
 
 import meshio
 import pyvista as pv
@@ -161,9 +162,35 @@ class MeshIO:
             return False
 
     @staticmethod
-    def read_obj(file_path: Path) -> pv.PolyData:
+    def read_mesh(
+        file_path: Path,
+        expected_type: type[pv.DataSet] = pv.DataSet,
+    ) -> pv.DataSet:
+        """
+        Read a mesh file and return it as a PyVista object.
+
+        Parameters
+        ----------
+        file_path : Path
+            Path to the mesh file.
+        expected_type : type, optional
+            Expected PyVista type (e.g., pv.PolyData or pv.UnstructuredGrid).
+            Defaults to pv.DataSet (no type check).
+
+        Returns
+        -------
+        pv.DataSet
+            The mesh object.
+
+        Raises
+        ------
+        FileNotFoundError
+            If the file does not exist.
+        TypeError
+            If the mesh is not of the expected type.
+        """
         file_path = Path(file_path)
-        logger.info(f"Attempting to read OBJ file: {file_path}")
+        logger.info(f"Reading mesh file: {file_path}")
 
         if not file_path.exists():
             logger.error(f"File not found: {file_path}")
@@ -171,11 +198,52 @@ class MeshIO:
 
         try:
             mesh = pv.read(file_path)
-            if not isinstance(mesh, pv.PolyData):
-                logger.error(f"Expected PolyData, but got {type(mesh).__name__}")
-                raise TypeError(f"Expected PolyData, got {type(mesh).__name__}")
-            logger.info(f"OBJ mesh loaded from {file_path}")
+            if not isinstance(mesh, expected_type):
+                logger.error(
+                    f"Expected {expected_type.__name__}, but got {type(mesh).__name__}"
+                )
+                raise TypeError(
+                    f"Expected {expected_type.__name__}, but got {type(mesh).__name__}"
+                )
+            logger.info(
+                f"Mesh loaded from {file_path} as {type(mesh).__name__} with {mesh.n_points} points"
+            )
             return mesh
         except Exception as e:
-            logger.error(f"Error reading OBJ file {file_path}: {e}")
+            logger.exception(f"Error reading mesh file {file_path}: {e}")
             raise
+
+    @staticmethod
+    def load_legacy_vtk(file_path: str) -> pv.UnstructuredGrid:
+        """
+        Load a legacy VTK file using the VTK DataSetReader.
+
+        .. deprecated:: 1.0.0
+        This method uses `vtk.vtkDataSetReader` and should only be used if `pyvista.read()` fails.
+        Use `pyvista.read()` or `MeshIO.read_mesh()` instead for automatic format detection.
+
+        Parameters
+        ----------
+        file_path : str
+            Path to the `.vtk` file in legacy format.
+
+        Returns
+        -------
+        pv.UnstructuredGrid
+            The loaded VTK mesh as a PyVista UnstructuredGrid.
+        """
+        warnings.warn(
+            "load_legacy_vtk() is deprecated and should only be used for legacy VTK files. "
+            "Use MeshIO.read_mesh() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+        reader = vtk.vtkDataSetReader()
+        reader.SetFileName(file_path)
+        reader.ReadAllVectorsOn()
+        reader.ReadAllScalarsOn()
+        reader.Update()
+
+        vtk_output = reader.GetOutput()
+        return pv.wrap(vtk_output)
