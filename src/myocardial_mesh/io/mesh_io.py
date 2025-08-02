@@ -7,7 +7,6 @@ import warnings
 import meshio
 import pyvista as pv
 import vtk
-from vtkmodules.numpy_interface import dataset_adapter as dsa
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +55,7 @@ class MeshIO:
                 logger.warning(f"Directory does not exist: {file_path.parent}")
                 return False
 
-        # Dispatch
+        # Dispatch to appropriate writer
         try:
             match method:
                 case WriteMethod.VTK:
@@ -64,9 +63,7 @@ class MeshIO:
                 case WriteMethod.PYVISTA:
                     return MeshIO._write_pyvista(vtk_mesh, file_path)
                 case WriteMethod.MESHIO:
-                    return MeshIO._write_meshio(
-                        vtk_mesh, file_path, point_data, cell_data
-                    )
+                    return MeshIO._write_meshio(vtk_mesh, file_path)
                 case _:
                     logger.error(f"Unknown write method: {method}")
                     return False
@@ -110,7 +107,7 @@ class MeshIO:
         logger.debug(f"Calling PyVista writer for file: {file_path}")
         try:
             mesh = pv.wrap(vtk_mesh)
-            mesh.save(file_path)
+            mesh.save(str(file_path))
             logger.info(f"Mesh saved to {file_path} using PyVista.")
             return True
         except Exception as e:
@@ -118,43 +115,26 @@ class MeshIO:
             return False
 
     @staticmethod
-    def _write_meshio(
-        vtk_mesh: vtk.vtkDataSet,
-        file_path: Path,
-        point_data: Optional[dict[str, Any]] = None,
-        cell_data: Optional[dict[str, Any]] = None,
-    ) -> bool:
+    def _write_meshio(vtk_mesh: vtk.vtkDataSet, file_path: Path) -> bool:
         logger.debug(f"Calling meshio writer for file: {file_path}")
         try:
-            dd = dsa.WrapDataObject(vtk_mesh)
+            # Wrap VTK mesh as PyVista for easy access
+            pv_mesh = pv.wrap(vtk_mesh)
+            points = pv_mesh.points  # Nx3 numpy array
 
-            if not hasattr(dd, "Polygons"):
-                logger.error("Wrapped mesh does not have 'Polygons' attribute.")
-                return False
+            # Collect all cell blocks (handles both PolyData and UnstructuredGrid)
+            cells = []
+            for name, block in pv_mesh.cells_dict.items():
+                cells.append((name, block))
 
-            points = dd.Points  # ndarray
-            polygons = (
-                dd.Polygons
-            )  # flat array like [3, i0, i1, i2, 3, i3, i4, i5, ...]
+            mesh = meshio.Mesh(points=points, cells=cells)
 
-            if polygons.ndim != 1 or len(polygons) % 4 != 0:
-                logger.error(f"Polygons array shape invalid: {polygons.shape}")
-                return False
-
-            cells = polygons.reshape((-1, 4))[:, 1:]  # Remove the leading '3'
-
-            logger.debug(
-                f"MeshIO - Points shape: {points.shape}, Cells shape: {cells.shape}"
+            # Write using meshio
+            meshio.write(
+                str(file_path),
+                mesh,
+                file_format=file_path.suffix.lstrip("."),
             )
-
-            mesh = meshio.Mesh(
-                points=points,
-                cells={"triangle": cells},
-                point_data=point_data or {},
-                cell_data=cell_data or {},
-            )
-
-            mesh.write(file_path)
             logger.info(f"Mesh written to {file_path} using meshio.")
             return True
         except Exception as e:
@@ -197,7 +177,7 @@ class MeshIO:
             raise FileNotFoundError(f"{file_path} does not exist")
 
         try:
-            mesh = pv.read(file_path)
+            mesh = pv.read(str(file_path))
             if not isinstance(mesh, expected_type):
                 logger.error(
                     f"Expected {expected_type.__name__}, but got {type(mesh).__name__}"
