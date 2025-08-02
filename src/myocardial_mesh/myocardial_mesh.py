@@ -98,6 +98,19 @@ class MyocardialMesh:
             D_local[i] = np.diag(conductivity_params)
         self.D = D_local
 
+    def _infer_write_method_from_extension(self, ext: str) -> WriteMethod:
+        normalized = ext.lstrip(".").lower()
+        if normalized in {"vtk", "vtp"}:
+            return WriteMethod.VTK
+        if normalized == "pyvista":
+            return WriteMethod.PYVISTA
+        if normalized == "meshio":
+            return WriteMethod.MESHIO
+        logger.warning(
+            "Unrecognized extension '%s', defaulting to WriteMethod.VTK", normalized
+        )
+        return WriteMethod.VTK
+
     def assemble_stiffness_matrix(self) -> None:
         logger.info("Assembling global stiffness matrix...")
         B, J = compute_Bmatrix(self.xyz, self.cells)
@@ -114,19 +127,6 @@ class MyocardialMesh:
 
     def project_pmjs(self, pmjs: np.ndarray) -> np.ndarray:
         return VTKGeometryUtils.find_closest_pmjs(pmjs, self.vtk_locator)
-
-    def _infer_write_method_from_extension(self, ext: str) -> WriteMethod:
-        normalized = ext.lstrip(".").lower()
-        if normalized in {"vtk", "vtp"}:
-            return WriteMethod.VTK
-        if normalized == "pyvista":
-            return WriteMethod.PYVISTA
-        if normalized == "meshio":
-            return WriteMethod.MESHIO
-        logger.warning(
-            "Unrecognized extension '%s', defaulting to WriteMethod.VTK", normalized
-        )
-        return WriteMethod.VTK
 
     def save(self, path: str) -> None:
         logger.info(f"Saving mesh to {path}")
