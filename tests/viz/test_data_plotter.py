@@ -3,6 +3,11 @@ import pyvista as pv
 import pytest
 from unittest.mock import patch
 
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
 from myocardial_mesh.viz.data_plotter import DataPlotter
 
 
@@ -59,6 +64,8 @@ def test_plot_ecg_valid():
         )
     except Exception as e:
         pytest.fail(f"plot_ecg raised an exception: {e}")
+    finally:
+        plt.close("all")
 
 
 def test_plot_ecg_invalid_shape():
