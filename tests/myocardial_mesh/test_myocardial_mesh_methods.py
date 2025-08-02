@@ -23,13 +23,13 @@ def test_assemble_stiffness_matrix(monkeypatch):
 
 def test_compute_ecg(monkeypatch):
     mm = MyocardialMesh(mesh_path="ignored")
-    mm.solver.get_ecg = lambda **kw: "ecg"
+    mm.solver.compute_ecg_from_activation = lambda **kw: "ecg"
     assert mm.compute_ecg(record_array=False) == "ecg"
 
 
 def test_compute_aux(monkeypatch):
     mm = MyocardialMesh(mesh_path="ignored")
-    mm.solver.get_aux_Vl = lambda: "aux"
+    mm.solver.compute_aux_integrals = lambda: "aux"
     assert mm.compute_ecg_aux_field() == "aux"
 
 
@@ -59,7 +59,7 @@ def test_save(monkeypatch, tmp_path):
     log = {}
     monkeypatch.setattr(
         "myocardial_mesh.io.mesh_io.MeshIO.write",
-        lambda mesh, path: log.setdefault("path", Path(path)),
+        lambda mesh, path, method: log.setdefault("path", Path(path)),
     )
     mm.save(dest)
     assert log["path"] == dest
