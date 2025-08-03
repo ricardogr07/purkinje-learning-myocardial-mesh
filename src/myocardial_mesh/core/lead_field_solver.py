@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import logging
-from typing import Optional, Any
+from typing import Optional, Any, Dict, List, cast
 
 import numpy as np
+from numpy.typing import NDArray
 from pyvista import DataSet
 from vtkmodules.numpy_interface import dataset_adapter as dsa
 
@@ -14,44 +17,40 @@ class LeadFieldSolver:
     def __init__(
         self,
         mesh: DataSet,
-        electrode_pos: Optional[dict[str, Any]] = None,
-        lead_fields_dict: Optional[dict[str, np.ndarray]] = None,
-        stiffness_matrix: Optional[np.ndarray] = None,
-        gi_nodal: Optional[np.ndarray] = None,
+        electrode_pos: Optional[Dict[str, Any]] = None,
+        lead_fields_dict: Optional[Dict[str, NDArray[np.float64]]] = None,
+        stiffness_matrix: Optional[NDArray[np.float64]] = None,
+        gi_nodal: Optional[NDArray[np.float64]] = None,
     ) -> None:
-        self.mesh = mesh
-        self.electrode_pos = electrode_pos
-        self.lead_fields_dict = lead_fields_dict
-        self.K = stiffness_matrix
-        self.Gi_nodal = gi_nodal
-        self.lead_field: dict[str, np.ndarray] = self._get_lead_field()
+        self.mesh: DataSet = mesh
+        self.electrode_pos: Optional[Dict[str, Any]] = electrode_pos
+        self.lead_fields_dict: Optional[
+            Dict[str, NDArray[np.float64]]
+        ] = lead_fields_dict
+        self.K: Optional[NDArray[np.float64]] = stiffness_matrix
+        self.Gi_nodal: Optional[NDArray[np.float64]] = gi_nodal
+        self.lead_field: Dict[str, NDArray[np.float64]] = self._get_lead_field()
 
-    def _get_lead_field(self) -> dict[str, np.ndarray]:
-        """
-        Retrieve precomputed lead field or calculate it from electrode positions.
-        """
+    def _get_lead_field(self) -> Dict[str, NDArray[np.float64]]:
         if self.lead_fields_dict is not None:
             return self.lead_fields_dict
         if self.electrode_pos is None:
             raise RuntimeError("No electrodes or lead fields provided.")
 
         logger.info("Computing lead field from electrode positions.")
-        points = dsa.WrapDataObject(self.mesh).Points
+        points: NDArray[np.float64] = dsa.WrapDataObject(self.mesh).Points
         return {
             name: 1 / np.linalg.norm(points - np.array(coord), axis=1)
             for name, coord in self.electrode_pos.items()
         }
 
-    def compute_aux_integrals(self) -> dict[str, np.ndarray]:
-        """
-        Compute auxiliary integral terms: Gi.T * ∇Z_l
-        """
+    def compute_aux_integrals(self) -> Dict[str, NDArray[np.float64]]:
         if self.electrode_pos is None or self.Gi_nodal is None:
             raise RuntimeError("Missing electrode positions or Gi_nodal.")
 
         logger.info("Computing auxiliary integrals for ECG.")
-        points = dsa.WrapDataObject(self.mesh).Points
-        Gi_T = np.transpose(self.Gi_nodal, axes=(0, 2, 1))
+        points: NDArray[np.float64] = dsa.WrapDataObject(self.mesh).Points
+        Gi_T: NDArray[np.float64] = np.transpose(self.Gi_nodal, axes=(0, 2, 1))
 
         return {
             name: np.sum(
@@ -65,24 +64,20 @@ class LeadFieldSolver:
             for name, coord in self.electrode_pos.items()
         }
 
-    def compute_ecg_from_activation(self, record_array: bool = False) -> np.ndarray:
-        """
-        Compute ECG signal from activation times using lead field and stiffness matrix.
-        """
+    def compute_ecg_from_activation(self, record_array: bool = False) -> Any:
         if self.lead_field is None or self.K is None:
             raise RuntimeError("Missing lead field or stiffness matrix.")
 
         dd = dsa.WrapDataObject(self.mesh)
-        u = dd.PointData["activation"]
+        u: NDArray[np.float64] = dd.PointData["activation"]
 
-        V0, V1, eps = -80, 20, 1.0
+        V0, V1, eps = -80.0, 20.0, 1.0
         req_time_ini, req_time_fin = -5.0, 200.0
         n_times = int(req_time_fin - req_time_ini + 1)
-        time_vec = np.linspace(req_time_ini, req_time_fin, n_times)
+        time_vec: NDArray[np.float64] = np.linspace(req_time_ini, req_time_fin, n_times)
 
-        # Use lead_field keys (safe regardless of whether electrode_pos was provided)
-        V_l_dict: dict[str, np.ndarray] = {
-            k: np.empty(n_times) for k in self.lead_field
+        V_l_dict: Dict[str, NDArray[np.float64]] = {
+            k: np.empty(n_times, dtype=float) for k in self.lead_field
         }
         uu = u - np.min(u)
 
@@ -92,7 +87,6 @@ class LeadFieldSolver:
             for name in self.lead_field:
                 V_l_dict[name][i] = np.dot(self.lead_field[name], self.K @ Vm)
 
-        # Compute Wilson central terminal (requires these specific leads to exist)
         try:
             V_W = (V_l_dict["RA"] + V_l_dict["LA"] + V_l_dict["LL"]) / 3
         except KeyError as e:
@@ -114,7 +108,7 @@ class LeadFieldSolver:
             "V5",
             "V6",
         ]
-        ecg_signals: list[np.ndarray] = []
+        ecg_signals: List[NDArray[np.float64]] = []
 
         for lead in leads:
             if lead == "E1":
@@ -133,5 +127,6 @@ class LeadFieldSolver:
                 ecg_signals.append(V_l_dict[lead] - V_W)
 
         if record_array:
-            return np.rec.fromarrays(ecg_signals, names=leads)
-        return np.array(ecg_signals)
+            rec = np.rec.fromarrays(cast(list, ecg_signals), names=leads)
+            return rec
+        return np.stack(ecg_signals)

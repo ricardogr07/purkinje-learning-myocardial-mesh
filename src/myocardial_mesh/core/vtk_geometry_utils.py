@@ -1,34 +1,39 @@
-import numpy as np
-import logging
-import vtk
-from vtkmodules.numpy_interface import dataset_adapter as dsa
+from __future__ import annotations
 
+import logging
+
+import vtk
+import numpy as np
+from numpy.typing import NDArray
+from vtkmodules.numpy_interface import dataset_adapter as dsa
 
 logger = logging.getLogger(__name__)
 
 
 class VTKGeometryUtils:
     @staticmethod
-    def find_closest_pmjs(pmjs: np.ndarray, locator: vtk.vtkCellLocator) -> np.ndarray:
+    def find_closest_pmjs(
+        pmjs: NDArray[np.float64], locator: vtk.vtkCellLocator
+    ) -> NDArray[np.float64]:
         """
         Project PMJs onto the mesh using a VTK spatial locator.
 
         Parameters
         ----------
-        pmjs : np.ndarray
+        pmjs : NDArray[np.float64]
             Array of shape (N, 3) with PMJ coordinates.
         locator : vtk.vtkCellLocator
             Locator built on the mesh.
 
         Returns
         -------
-        np.ndarray
+        NDArray[np.float64]
             Array of projected PMJ coordinates.
         """
         cellId = vtk.reference(0)
         subId = vtk.reference(0)
         d = vtk.reference(0.0)
-        ppmjs = np.zeros_like(pmjs)
+        ppmjs: NDArray[np.float64] = np.zeros_like(pmjs)
 
         for k in range(pmjs.shape[0]):
             locator.FindClosestPoint(pmjs[k, :], ppmjs[k, :], cellId, subId, d)
@@ -36,7 +41,9 @@ class VTKGeometryUtils:
         return ppmjs
 
     @staticmethod
-    def probe_activation(mesh: vtk.vtkDataSet, query_points: np.ndarray) -> np.ndarray:
+    def probe_activation(
+        mesh: vtk.vtkDataSet, query_points: NDArray[np.float64]
+    ) -> NDArray[np.float64]:
         """
         Interpolate the 'activation' field at selected query points on a VTK mesh.
 
@@ -44,12 +51,12 @@ class VTKGeometryUtils:
         ----------
         mesh : vtk.vtkDataSet
             Mesh containing the 'activation' field.
-        query_points : np.ndarray
+        query_points : NDArray[np.float64]
             N×3 array of spatial locations.
 
         Returns
         -------
-        np.ndarray
+        NDArray[np.float64]
             Interpolated activation values at the query points.
         """
         logger.debug("Probing activation at selected locations...")
@@ -70,4 +77,4 @@ class VTKGeometryUtils:
         output = dsa.WrapDataObject(probe.GetOutput())
         activation = output.PointData["activation"]
 
-        return np.array(activation)
+        return np.array(activation, dtype=float)

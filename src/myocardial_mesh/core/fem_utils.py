@@ -22,7 +22,7 @@ def compute_Bmatrix(
             - B (NDArray[np.float64]): The strain-displacement matrix of shape (3, 4, ...), where ... denotes possible batch dimensions.
             - detJ (NDArray[np.float64]): The determinant of the Jacobian for the element(s), shape (...).
     """
-    logger.debug("Computing B-matrix and determinant of Jacobian.")
+    logger.log("Computing B-matrix and determinant of Jacobian.")
     nodeCoords = np.moveaxis(pts[elm, :], 0, -1)
 
     # NOTE: The definition of the parent tetrahedron by Hughes - "The Finite Element Method" (p. 170) is different from the
@@ -75,7 +75,6 @@ def compute_Bmatrix(
         [[1.0, 0.0, 0.0, -1.0], [0.0, 0.0, 1.0, -1.0], [0.0, 1.0, 0.0, -1.0]]
     )
     B = Jinv.T @ B_def[..., :]
-    # Ensure outputs are proper arrays (avoid Any leaking)
     B = np.asarray(B)
     detJ = np.asarray(detJ)
     logger.debug("B-matrix and detJ computed successfully.")
@@ -96,10 +95,10 @@ def compute_local_stiffness_matrix(
     Returns:
         NDArray[np.float64]: The local stiffness matrices for each element, shape (n_elements, n_nodes, n_nodes).
     """
-    logger.debug("Computing local stiffness matrix.")
+    logger.log("Computing local stiffness matrix.")
     K = np.einsum("nji,njk,nkl->nil", B, G, B) / 6.0
     K = 1 / J[:, None, None] * K
-    logger.debug("Local stiffness matrix computed successfully.")
+    logger.log("Local stiffness matrix computed successfully.")
     return cast(NDArray[np.float64], K)
 
 

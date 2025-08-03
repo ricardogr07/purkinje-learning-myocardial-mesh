@@ -63,19 +63,18 @@ envlist                    = ["py310", "py312", "lint"]
 isolated_build             = true
 skip_missing_interpreters  = true
 
-[tool.tox.envs.py310]
-deps     = ["pytest"]
-commands = ["pytest tests"]
-
-[tool.tox.envs.py312]
-deps     = ["pytest"]
+[tool.tox.testenv]
+description = "Run the test suite"
+deps = [
+  "pytest>=7.1,<8.0",
+]
 commands = ["pytest tests"]
 
 [tool.tox.envs.lint]
-description   = "Run ruff and black"
+description = "Run formatting, static analysis, and style checks"
 skip_install  = true
-deps          = ["black", "ruff"]
+deps          = ["black", "ruff", "mypy", "pydocstyle"]
 commands      = [
   "black --check src/ tests/",
-  "ruff check src/ tests/"
+  "ruff check src/ tests/",
 ]
