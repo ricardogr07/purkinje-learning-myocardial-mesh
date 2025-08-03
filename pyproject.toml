@@ -10,7 +10,7 @@ authors = [
   {name = "Ricardo García Ramírez", email = "rgr.5882@gmail.com"}
 ]
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 license = "MIT"
 
 keywords = ["mesh", "myocardial", "ECG", "FIM", "vtk", "pyvista", "simulation", "biomedical"]
@@ -31,3 +31,51 @@ dependencies = [
 [tool.setuptools]
 packages = ["myocardial_mesh"]
 package-dir = {"" = "src"}
+
+[tool.black]
+line-length = 88
+target-version = ["py310"]
+skip-string-normalization = true
+
+[tool.ruff]
+target-version = "py310"
+
+[tool.mypy]
+files = ["src"]
+python_version = "3.10"
+strict = true
+ignore_missing_imports = true
+disallow_untyped_calls = false
+check_untyped_defs = true
+
+[tool.pydocstyle]
+convention = "google"
+match      = ".*\\\\.py"
+add-ignore = ["D104", "D105", "D107"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+addopts = "--cov=src/myocardial_mesh --cov-fail-under=80 -ra -q"
+testpaths  = ["tests"]
+
+[tool.tox]
+envlist                    = ["py310", "py312", "lint"]
+isolated_build             = true
+skip_missing_interpreters  = true
+
+[tool.tox.envs.py310]
+deps     = ["pytest"]
+commands = ["pytest tests"]
+
+[tool.tox.envs.py312]
+deps     = ["pytest"]
+commands = ["pytest tests"]
+
+[tool.tox.envs.lint]
+description   = "Run ruff and black"
+skip_install  = true
+deps          = ["black", "ruff"]
+commands      = [
+  "black --check src/ tests/",
+  "ruff check src/ tests/"
+]
