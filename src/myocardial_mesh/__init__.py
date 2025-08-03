@@ -1,3 +1,3 @@
-from .MyocardialMesh import MyocardialMesh
+from .myocardial_mesh import MyocardialMesh
 
 __all__ = ["MyocardialMesh"]
