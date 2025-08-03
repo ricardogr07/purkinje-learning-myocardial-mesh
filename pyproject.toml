@@ -50,7 +50,7 @@ check_untyped_defs = true
 
 [tool.pydocstyle]
 convention = "google"
-match      = ".*\\\\.py"
+match      = ".*\.py"
 add-ignore = ["D104", "D105", "D107"]
 
 [tool.pytest.ini_options]
