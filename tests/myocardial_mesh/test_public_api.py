@@ -22,8 +22,18 @@ def _write_minimal_case(tmp: Path):
     fibers_path = tmp / "fibers.vtu"
     ug_f.save(fibers_path)
 
-    # electrodes: a single electrode (we won’t call ECG here)
-    elec = {"E": np.array([10.0, 10.0, 10.0])}
+    # electrodes: provide RA/LA/LL and V1..V6 so 12-lead assembly works
+    elec = {
+        "RA": np.array([10.0, 0.0, 10.0]),
+        "LA": np.array([-10.0, 0.0, 10.0]),
+        "LL": np.array([0.0, -10.0, 10.0]),
+        "V1": np.array([10.0, 10.0, 10.0]),
+        "V2": np.array([11.0, 10.0, 10.0]),
+        "V3": np.array([12.0, 10.0, 10.0]),
+        "V4": np.array([13.0, 10.0, 10.0]),
+        "V5": np.array([14.0, 10.0, 10.0]),
+        "V6": np.array([15.0, 10.0, 10.0]),
+    }
     elec_path = tmp / "electrode_pos.pkl"
     with open(elec_path, "wb") as f:
         pickle.dump(elec, f)
