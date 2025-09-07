@@ -2,7 +2,7 @@ import numpy as np
 import logging
 
 
-logger = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 
 def Bmatrix(pts: np.ndarray, elm: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -18,7 +18,7 @@ def Bmatrix(pts: np.ndarray, elm: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
             - B (np.ndarray): The strain-displacement matrix of shape (3, 4, ...), where ... denotes possible batch dimensions.
             - detJ (np.ndarray): The determinant of the Jacobian for the element(s), shape (...).
     """
-    logger.debug("Computing B-matrix and determinant of Jacobian.")
+    _LOGGER.debug("Computing B-matrix and determinant of Jacobian.")
     nodeCoords = np.moveaxis(pts[elm, :], 0, -1)
 
     # NOTE: The definition of the parent tetrahedron by Hughes - "The Finite Element Method" (p. 170) is different from the
@@ -71,7 +71,7 @@ def Bmatrix(pts: np.ndarray, elm: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         [[1.0, 0.0, 0.0, -1.0], [0.0, 0.0, 1.0, -1.0], [0.0, 1.0, 0.0, -1.0]]
     )
     B = Jinv.T @ B_def[..., :]
-    logger.debug("B-matrix and detJ computed successfully.")
+    _LOGGER.debug("B-matrix and detJ computed successfully.")
     return B, detJ
 
 
@@ -87,8 +87,8 @@ def localStiffnessMatrix(B: np.ndarray, J: np.ndarray, G: np.ndarray) -> np.ndar
     Returns:
         np.ndarray: The local stiffness matrices for each element, shape (n_elements, n_nodes, n_nodes).
     """
-    logger.debug("Computing local stiffness matrix.")
+    _LOGGER.debug("Computing local stiffness matrix.")
     K = np.einsum("nji,njk,nkl->nil", B, G, B) / 6.0
     K = 1 / J[:, None, None] * K
-    logger.debug("Local stiffness matrix computed successfully.")
+    _LOGGER.debug("Local stiffness matrix computed successfully.")
     return K
