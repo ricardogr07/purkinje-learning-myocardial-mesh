@@ -57,7 +57,11 @@ add-ignore = ["D104", "D105", "D107"]
 pythonpath = ["src"]
 addopts = "--cov=myocardial_mesh --cov-fail-under=80 -ra -q"
 testpaths  = ["tests"]
-
+markers = [
+  "baseline: parity against notebook ground truth",
+  "acceptance: feature-level E2E acceptance",
+  "jax: tests requiring the JAX/UV purkinje path"
+]
 [tool.tox]
 envlist                    = ["py310", "py312", "lint"]
 isolated_build             = true
