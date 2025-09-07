@@ -11,7 +11,7 @@ from myocardial_mesh.plotting import ecg_12lead_plot
 from purkinje_uv import FractalTreeParameters, FractalTree, PurkinjeTree
 
 # Toggle to auto-open the saved PNGs in the default viewer (Windows only here)
-SHOW_FIG = True
+SHOW_FIG = False
 
 DATA = Path("data/crtdemo")
 
