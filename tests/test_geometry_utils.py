@@ -1,5 +1,5 @@
 import numpy as np
-from myocardial_mesh.geometry_utils import Bmatrix, localStiffnessMatrix
+from myocardial_mesh.core.geometry_utils import Bmatrix, localStiffnessMatrix
 
 
 def test_Bmatrix_output_shape_and_detJ_sign():
