@@ -33,7 +33,7 @@ jobs:
 
       - name: Build package
         run: python -m build
-      
+
       - name: Display build artifacts
         run: ls -lh dist
 

@@ -1,32 +1,41 @@
-# myocardial_mesh/plotting.py
+"""Plotting utilities for ECG visualization.
+
+This module provides helper functions to visualize 12-lead ECG recordings
+returned by ``MyocardialMesh.new_get_ecg(record_array=True)``.
+"""
+
 from __future__ import annotations
-import numpy as np
+
+import logging
+from typing import Optional, Tuple
+
 import matplotlib.pyplot as plt
-from typing import Tuple
+import numpy as np
+from matplotlib.figure import Figure
+from numpy.typing import NDArray
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def ecg_12lead_plot(
-    ecg_rec: np.ndarray,
+    ecg_rec: NDArray[np.void],
     *,
     figsize: Tuple[float, float] = (10, 13),
     dpi: int = 120,
-    suptitle: str | None = None,
-):
-    """
-    Parameters
-    ----------
-    ecg_rec : structured np.ndarray
-        Use MyocardialMesh.new_get_ecg(record_array=True).
-    figsize : tuple
-        Figure size in inches (default (10, 13) to match the notebook).
-    dpi : int
-        Matplotlib DPI for the figure (default 120).
-    suptitle : str | None
-        Optional figure title.
+    suptitle: Optional[str] = None,
+) -> Tuple[Figure, NDArray[np.object_]]:
+    """Plot a 12-lead ECG recording in a 3×4 grid of subplots.
 
-    Returns
-    -------
-    fig, axs : (matplotlib.figure.Figure, np.ndarray[Axes] of shape (3,4))
+    Args:
+        ecg_rec: Structured NumPy array returned by
+            ``MyocardialMesh.new_get_ecg(record_array=True)``.
+        figsize: Figure size in inches. Defaults to ``(10, 13)``.
+        dpi: Matplotlib DPI for the figure. Defaults to ``120``.
+        suptitle: Optional figure title.
+
+    Returns:
+        Tuple[Figure, NDArray[Axes]]: The created Matplotlib figure and a
+        3×4 array of axes.
     """
     if ecg_rec.dtype.names is None:
         raise TypeError(
@@ -34,7 +43,9 @@ def ecg_12lead_plot(
             "call new_get_ecg(record_array=True)."
         )
 
-    names = ecg_rec.dtype.names  # keep raw order
+    names = ecg_rec.dtype.names
+    _LOGGER.info("Plotting 12-lead ECG with %d leads", len(names))
+
     fig, axs = plt.subplots(3, 4, figsize=figsize, dpi=dpi, sharex=True, sharey=True)
     axs = np.asarray(axs)
 
@@ -43,6 +54,7 @@ def ecg_12lead_plot(
         ax.plot(y, linewidth=1.0)
         ax.grid(True)
         ax.set_title(lead)
+        _LOGGER.debug("Plotted lead %s with %d samples", lead, y.shape[0])
 
     if suptitle:
         fig.suptitle(suptitle)

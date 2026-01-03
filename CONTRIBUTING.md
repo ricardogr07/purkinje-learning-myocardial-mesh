@@ -1,7 +1,7 @@
 
 # Contributing to purkinje-learning-myocardial-mesh
 
-Thank you for considering a contribution.  
+Thank you for considering a contribution.
 This project aims to provide a reliable, well‑tested toolkit for myocardial mesh generation, lead‑field computation, and related Bayesian optimisation workflows. The guidelines below help maintain consistency, quality, and reproducibility.
 
 ---
@@ -42,18 +42,18 @@ If a hook fails, address the reported issues and recommit.
 
 ## 3. Branching and pull‑request policy
 
-`main` is a protected branch. **Direct pushes are prohibited.**  
+`main` is a protected branch. **Direct pushes are prohibited.**
 To contribute:
 
-1. Create a feature branch  
+1. Create a feature branch
    ```bash
    git checkout -b feature/my-change
    ```
-2. Commit your work (hooks run automatically).  
-3. Push the branch and open a Pull Request (PR) against `main`.  
-4. Ensure all required checks pass (CI, tests, code scanning, coverage).  
-5. Request review from a maintainer.  
-6. After approval, merge using the **“Create a merge commit”** button.  
+2. Commit your work (hooks run automatically).
+3. Push the branch and open a Pull Request (PR) against `main`.
+4. Ensure all required checks pass (CI, tests, code scanning, coverage).
+5. Request review from a maintainer.
+6. After approval, merge using the **“Create a merge commit”** button.
    Squash‑and‑merge or rebase‑and‑merge is disabled to preserve linear history.
 
 ### 3.1 Repository rules enforced by GitHub
@@ -113,8 +113,8 @@ setting.
 
 ## 7. Filing issues and feature requests
 
-* Search existing issues before opening a new one.  
-* Provide minimal reproduction steps or code snippets.  
+* Search existing issues before opening a new one.
+* Provide minimal reproduction steps or code snippets.
 * For feature requests, describe the use‑case and desired behaviour.
 
 ---
