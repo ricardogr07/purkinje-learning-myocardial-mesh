@@ -1,11 +1,15 @@
-# src/myocardial_mesh/io/fiber_processor.py
+"""Fiber processing utilities for myocardial meshes."""
+
 from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Dict, Optional
 import os
+
 import numpy as np
 import vtk
 from vtkmodules.numpy_interface import dataset_adapter as dsa
+from vtkmodules.vtkCommonDataModel import vtkDataSet
 import pyvista as pv
 from scipy.spatial.distance import cdist
 
@@ -14,6 +18,8 @@ __all__ = ["FiberResult", "process_fibers"]
 
 @dataclass
 class FiberResult:
+    """Container for processed fiber directions and conductivity tensors."""
+
     l_nodes: np.ndarray  # (N,3) float64, unit vectors
     l_cell: np.ndarray  # (T,3) float64, unit vectors
     Gi_nodal: np.ndarray  # (N,3,3) float64
@@ -22,7 +28,7 @@ class FiberResult:
     cv_fiber_m_per_s: float  # scalar
 
 
-def _read_unstructured(path: str):
+def _read_unstructured(path: str) -> vtkDataSet:
     ext = os.path.splitext(path)[1].lower()
     if ext == ".vtu":
         rdr = vtk.vtkXMLUnstructuredGridReader()
@@ -64,9 +70,11 @@ def process_fibers(
     cells: np.ndarray,  # (T,4) tetra connectivity
     conductivity_params: Optional[Dict[str, float]] = None,
 ) -> FiberResult:
-    """
-    Load fibers (PointData['fiber'] or CellData['fiber']), produce l_nodes/l_cell,
-    and compute Gi_nodal, Gi_cell, and D exactly as legacy code.
+    """Load and process fiber directions for a myocardium mesh.
+
+    This loads the fiber field from PointData["fiber"] or CellData["fiber"],
+    computes normalized directions at nodes and cells, and derives Gi/Gm/D
+    tensors using the legacy parameterization.
     """
     f0 = _read_unstructured(fibers_path)
     dd_f0 = dsa.WrapDataObject(f0)

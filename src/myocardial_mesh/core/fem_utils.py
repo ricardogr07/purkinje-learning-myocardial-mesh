@@ -1,5 +1,7 @@
-# src/myocardial_mesh/core/fem_utils.py
+"""Finite element assembly helpers."""
+
 from __future__ import annotations
+
 import numpy as np
 from scipy import sparse
 
@@ -10,19 +12,15 @@ __all__ = ["assemble_K", "Bmatrix", "localStiffnessMatrix"]
 
 
 def assemble_K(pts: np.ndarray, elm: np.ndarray, Gi: np.ndarray) -> sparse.csr_matrix:
-    """
-    Assemble the global stiffness/Laplacian matrix (legacy behavior).
-    Parameters
-    ----------
-    pts : (N,3) float array
-        Node coordinates.
-    elm : (T,4) int array
-        Tetrahedral connectivity (node indices).
-    Gi :  (T,3,3) float array
-        Intracellular conductivity tensor per cell.
-    Returns
-    -------
-    K : scipy.sparse.csr_matrix, shape (N,N)
+    """Assemble the global stiffness/Laplacian matrix (legacy behavior).
+
+    Args:
+        pts: Node coordinates with shape (N, 3).
+        elm: Tetrahedral connectivity with shape (T, 4).
+        Gi: Intracellular conductivity tensor per cell, shape (T, 3, 3).
+
+    Returns:
+        scipy.sparse.csr_matrix: Global stiffness matrix with shape (N, N).
     """
     B, J = Bmatrix(pts, elm)
     Kloc = localStiffnessMatrix(B, J, Gi)  # (T,4,4)

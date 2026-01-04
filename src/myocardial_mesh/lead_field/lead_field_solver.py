@@ -1,20 +1,22 @@
+"""Lead-field computation and ECG synthesis helpers."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Dict, Iterable, Tuple
+
 import numpy as np
 from scipy import sparse
 
 
 @dataclass
 class LeadFieldSolver:
-    """
-    Minimal ECG synthesis helper.
+    """ECG synthesis helper matching legacy math.
 
-    Responsibilities (identical math to your legacy implementation):
-    - Build simple 1/|r| lead fields per electrode (node-wise weights).
-    - Given an activation field, synthesize 12-lead ECG using the same
-      Vm(t) and Laplacian/K pipeline you had in MyocardialMesh.new_get_ecg.
+    Responsibilities:
+        - Build simple 1/|r| lead fields per electrode (node-wise weights).
+        - Given an activation field, synthesize 12-lead ECG using the same
+          Vm(t) and Laplacian/K pipeline used in MyocardialMesh.new_get_ecg.
     """
 
     xyz: np.ndarray  # (N, 3)
@@ -23,9 +25,7 @@ class LeadFieldSolver:
     K: np.ndarray | sparse.spmatrix
 
     def get_lead_field(self) -> Dict[str, np.ndarray]:
-        """
-        Classic 1/|r| node-wise weights per electrode (unchanged).
-        """
+        """Return classic 1/|r| node-wise weights per electrode."""
         lf: Dict[str, np.ndarray] = {}
         for name, coords in self.electrode_pos.items():
             r = self.xyz - np.asarray(coords, dtype=float)
@@ -33,9 +33,10 @@ class LeadFieldSolver:
         return lf
 
     def compute_aux_Vl(self) -> Dict[str, np.ndarray]:
-        """
-        Gi^T * r/|r|^3 node-wise quantity (kept so callers can cache it).
-        Not used in the current ECG synthesis path, but matches the legacy API.
+        """Compute node-wise Gi^T * r/|r|^3 values.
+
+        This is kept for legacy callers that cache auxiliary lead-field
+        quantities, even though the current ECG synthesis path does not use it.
         """
         aux: Dict[str, np.ndarray] = {}
         Gi_T = np.transpose(self.Gi_nodal, axes=(0, 2, 1))  # (N,3,3)
@@ -51,9 +52,9 @@ class LeadFieldSolver:
     def _twelve_leads_from_limb_and_precordials(
         V_l_dict: Dict[str, np.ndarray]
     ) -> np.recarray:
-        """
-        Assemble 12-lead outputs (E1/E2/E3, aVR/aVL/aVF, V1..V6) from node-integrated
-        limb potentials RA/LA/LL and precordials V1..V6. Matches legacy exact formulas.
+        """Assemble the standard 12-lead ECG from limb and precordial potentials.
+
+        This matches the legacy formulas for E1/E2/E3, aVR/aVL/aVF, and V1..V6.
         """
         leads = [
             "E1",
@@ -96,16 +97,26 @@ class LeadFieldSolver:
         eps: float = 1.0,
         electrodes_order: Iterable[str] | None = None,
         lead_field: Dict[str, np.ndarray] | None = None,
-    ):
-        """
-        Reproduce MyocardialMesh.new_get_ecg() bit-for-bit.
+    ) -> np.recarray | np.ndarray:
+        """Reproduce MyocardialMesh.new_get_ecg() bit-for-bit.
 
-        - Vm(t) = V0 + (V1-V0)/2 * (1 + tanh((t - (u - umin))/eps))
-        - Integrate K·Vm against 1/|r| weights for each electrode.
-        - Derive the 12-lead set.
+        Vm(t) = V0 + (V1-V0)/2 * (1 + tanh((t - (u - umin))/eps)), then
+        integrate K*Vm against 1/|r| weights for each electrode and derive
+        the 12-lead set.
 
-        Returns a structured array (default) or a float ndarray (12, T)
-        if record_array=False (matching your tests).
+        Args:
+            activation: Activation field at all mesh nodes, shape (N,).
+            record_array: If True, return a structured array; else (12, T) ndarray.
+            req_time_ini: Start time in ms.
+            req_time_fin: End time in ms.
+            V0: Resting potential (mV).
+            V1: Peak potential (mV).
+            eps: Smoothing factor for the tanh activation.
+            electrodes_order: Optional electrode iteration order.
+            lead_field: Optional precomputed lead-field dictionary.
+
+        Returns:
+            np.recarray | np.ndarray: ECG waveforms as a record array or (12, T) array.
         """
         u = np.asarray(activation, dtype=float)
         umin = float(np.min(u))

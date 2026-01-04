@@ -47,11 +47,13 @@ strict = true
 ignore_missing_imports = true
 disallow_untyped_calls = false
 check_untyped_defs = true
+exclude = '^tests/'
 
 [tool.pydocstyle]
 convention = "google"
+match-dir = "^src"
 match      = ".*\\.py"
-add-ignore = ["D104", "D105", "D107"]
+add-ignore = ["D105", "D107"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

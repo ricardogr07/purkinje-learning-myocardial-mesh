@@ -9,7 +9,7 @@ from myocardial_mesh.plotting import ecg_12lead_plot
 
 from purkinje_uv import FractalTreeParameters, FractalTree, PurkinjeTree
 
-SHOW_FIG = False  # set True to show figures during test (if run interactively)
+SHOW_FIG = True  # set True to show figures during test (if run interactively)
 
 DATA = Path("data/crtdemo")
 

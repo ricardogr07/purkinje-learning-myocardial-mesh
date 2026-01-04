@@ -1,22 +1,22 @@
-import numpy as np
+"""Geometry helpers for tetrahedral finite elements."""
+
 import logging
+import numpy as np
 
 
 _LOGGER = logging.getLogger(__name__)
 
 
 def Bmatrix(pts: np.ndarray, elm: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """
-    Computes the strain-displacement matrix (B-matrix) and the determinant of the Jacobian for a tetrahedral finite element.
+    """Compute the B-matrix and Jacobian determinant for tetrahedral elements.
 
     Args:
-        pts (np.ndarray): Array of nodal coordinates with shape (num_nodes, 3).
-        elm (np.ndarray): Array of element node indices (typically shape (4,) for a tetrahedron).
+        pts: Array of nodal coordinates with shape (num_nodes, 3).
+        elm: Array of element node indices (typically shape (4,) for a tetrahedron).
 
     Returns:
-        tuple[np.ndarray, np.ndarray]:
-            - B (np.ndarray): The strain-displacement matrix of shape (3, 4, ...), where ... denotes possible batch dimensions.
-            - detJ (np.ndarray): The determinant of the Jacobian for the element(s), shape (...).
+        Tuple[np.ndarray, np.ndarray]: (B, detJ) where B is the strain-displacement
+        matrix and detJ is the Jacobian determinant for each element.
     """
     _LOGGER.debug("Computing B-matrix and determinant of Jacobian.")
     nodeCoords = np.moveaxis(pts[elm, :], 0, -1)
@@ -76,16 +76,15 @@ def Bmatrix(pts: np.ndarray, elm: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 
 
 def localStiffnessMatrix(B: np.ndarray, J: np.ndarray, G: np.ndarray) -> np.ndarray:
-    """
-    Computes the local stiffness matrix for a finite element mesh.
+    """Compute the local stiffness matrix for each element.
 
     Args:
-        B (np.ndarray): The strain-displacement matrix of shape (n_elements, n_nodes, n_dim).
-        J (np.ndarray): The Jacobian determinants for each element, shape (n_elements,).
-        G (np.ndarray): The material property matrix (e.g., elasticity tensor), shape (n_elements, n_dim, n_dim).
+        B: Strain-displacement matrix with shape (n_elements, n_nodes, n_dim).
+        J: Jacobian determinants for each element, shape (n_elements,).
+        G: Material property tensor, shape (n_elements, n_dim, n_dim).
 
     Returns:
-        np.ndarray: The local stiffness matrices for each element, shape (n_elements, n_nodes, n_nodes).
+        np.ndarray: Local stiffness matrices, shape (n_elements, n_nodes, n_nodes).
     """
     _LOGGER.debug("Computing local stiffness matrix.")
     K = np.einsum("nji,njk,nkl->nil", B, G, B) / 6.0

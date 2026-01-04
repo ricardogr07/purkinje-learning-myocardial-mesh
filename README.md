@@ -7,11 +7,11 @@ A Python library for modeling, manipulating, and analyzing Purkinje‑fiber netw
 
 ## Features
 
-- Parse and manipulate myocardial‑mesh data  
-- Integrate Purkinje‑network geometries  
-- Designed for computational‑simulation environments  
-- Structured for maintainability and versioned releases  
-- Automated testing with `pytest` and CI‑friendly config  
+- Parse and manipulate myocardial‑mesh data
+- Integrate Purkinje‑network geometries
+- Designed for computational‑simulation environments
+- Structured for maintainability and versioned releases
+- Automated testing with `pytest` and CI‑friendly config
 
 ---
 
@@ -89,7 +89,7 @@ feat: add new Purkinje-mesh attachment algorithm
 
 ## Contributing
 
-We welcome pull requests and new ideas.  
+We welcome pull requests and new ideas.
 Please read the [CONTRIBUTING.md](CONTRIBUTING.md) guide before opening an issue or submitting a PR. It covers code style, branch policy, and the protected‑branch rules enforced for the repository.
 
 ---

@@ -1,6 +1,9 @@
+"""Myocardial mesh wrapper and ECG synthesis utilities."""
+
 import logging
 import time
 import pickle
+from typing import Any
 
 import numpy as np
 from vtkmodules.numpy_interface import dataset_adapter as dsa
@@ -22,26 +25,27 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class MyocardialMesh:
-    """
-    Endocardial myocardium mesh + ECG synthesis utilities.
-    """
+    """Endocardial myocardium mesh and ECG synthesis utilities."""
 
     def __init__(
         self,
         myo_mesh: str,
-        electrodes_position: str,
+        electrodes_position: str | None,
         fibers: str,
         device: str | None = "cpu",
-        conductivity_params: dict | None = None,
-        lead_fields_dict: dict | None = None,
+        conductivity_params: dict[str, float] | None = None,
+        lead_fields_dict: dict[str, np.ndarray] | None = None,
     ):
-        """
-        Myocardial mesh wrapper.
+        """Initialize the myocardial mesh wrapper.
 
-        - Preserves PointData['activation'] if present (e.g., True_endo.vtu).
-        - Uses mesh_io.load_unstructured + mesh_io.build_cell_locator.
-        - Loads fibers via io.fiber_processor.process_fibers (legacy-equivalent math).
-        - Builds tensors D, Laplacian K, lead fields, and FIM solver.
+        Notes:
+            - Preserves PointData["activation"] if present (e.g., True_endo.vtu).
+            - Uses mesh_io.load_unstructured + mesh_io.build_cell_locator.
+            - Loads fibers via io.fiber_processor.process_fibers (legacy-equivalent math).
+            - Builds tensors D, Laplacian K, lead fields, and FIM solver.
+
+            - If lead_fields_dict is provided, electrodes_position can be None.
+            - In that case, aux lead-field computation is skipped.
         """
         # ---- device
         self.device = "cpu" if device is None else device
@@ -72,9 +76,21 @@ class MyocardialMesh:
         # ---- locator (for PMJ snapping/probing)
         self.vtk_locator = build_cell_locator(self.vtk_mesh)
 
+        # ---- electrodes / lead fields input contract
+        if lead_fields_dict is None and electrodes_position is None:
+            raise ValueError(
+                "Provide either `electrodes_position` (analytic lead fields) or "
+                "`lead_fields_dict` (precomputed .dat lead fields)."
+            )
+
         # ---- electrodes
-        with open(electrodes_position, "rb") as f:
-            self.electrode_pos = pickle.load(f)  # dict: name -> (x,y,z)
+        if electrodes_position is not None:
+            with open(electrodes_position, "rb") as f:
+                self.electrode_pos = pickle.load(f)  # dict: name -> (x,y,z)
+        else:
+            # For precomputed lead fields, electrode positions are not needed.
+            # Keep an empty dict for compatibility with LeadFieldSolver signature.
+            self.electrode_pos = {}
 
         # ---- fibers → l_nodes/l_cell, Gi/Gm/D (delegated to processor)
         fr = process_fibers(
@@ -97,19 +113,27 @@ class MyocardialMesh:
         self.K = assemble_K(np.asarray(self.xyz, float), self.cells, self.Gi_cell)
 
         # ---- Lead-field helper (composition; behavior unchanged)
+        # NOTE: For precomputed lead fields, electrode_pos is unused downstream as long as
+        # ecg_from_activation receives `lead_field=self.lead_field`.
         self.lead = LeadFieldSolver(
             xyz=np.asarray(self.xyz, float),
             electrode_pos=self.electrode_pos,
             Gi_nodal=self.Gi_nodal,
             K=self.K,
         )
+
         # keep cached fields for parity with legacy API
-        self.aux_int_Vl = self.lead.compute_aux_Vl()
-        self.lead_field = (
-            lead_fields_dict
-            if lead_fields_dict is not None
-            else self.lead.get_lead_field()
-        )
+        if lead_fields_dict is not None and electrodes_position is None:
+            # Precomputed Z_l provided -> skip aux computation that requires electrode positions
+            self.aux_int_Vl = None
+            self.lead_field = lead_fields_dict
+        else:
+            self.aux_int_Vl = self.lead.compute_aux_Vl()
+            self.lead_field = (
+                lead_fields_dict
+                if lead_fields_dict is not None
+                else self.lead.get_lead_field()
+            )
 
         # ---- FIM solver
         print("initializing FIM solver")
@@ -119,12 +143,18 @@ class MyocardialMesh:
         )
         print(time.time() - t0)
 
-    def activate_fim(self, x0, x0_vals, return_only_pmjs=False):
-        """
-        Exact legacy behavior, now via small, testable helpers:
-          1) legacy per-PMJ projection onto closest cell's 4 nodes
-          2) full FIM solve
-          3) optional sampling back at PMJ coordinates
+    def activate_fim(
+        self,
+        x0: np.ndarray,
+        x0_vals: np.ndarray,
+        return_only_pmjs: bool = False,
+    ) -> np.ndarray:
+        """Run the legacy FIM solve with optional PMJ sampling.
+
+        Steps:
+            1) Project PMJs to closest cell nodes.
+            2) Solve full FIM.
+            3) Optionally sample back at PMJ coordinates.
         """
         dd = dsa.WrapDataObject(self.vtk_mesh)
         xyz = np.asarray(dd.Points, float)
@@ -156,21 +186,28 @@ class MyocardialMesh:
         else:
             return sol
 
-    def new_get_ecg_aux_Vl(self):
+    def new_get_ecg_aux_Vl(self) -> dict[str, np.ndarray]:
+        """Compute auxiliary lead-field values for ECG synthesis."""
+        # For precomputed lead fields, aux_int_Vl is intentionally None.
+        # Keep API: compute if possible.
         return self.lead.compute_aux_Vl()
 
-    def get_lead_field(self):
+    def get_lead_field(self) -> dict[str, np.ndarray]:
+        """Return lead-field weights for each electrode."""
         return self.lead.get_lead_field()
 
-    def get_ecg(self, *args, **kwargs):
+    def get_ecg(self, *args: Any, **kwargs: Any) -> np.recarray | np.ndarray:
+        """Compatibility alias for new_get_ecg."""
         return self.new_get_ecg(*args, **kwargs)
 
-    def new_get_ecg(self, record_array=True):
+    def new_get_ecg(self, record_array: bool = True) -> np.recarray | np.ndarray:
+        """Return ECG signals from the current activation field."""
         dd = dsa.WrapDataObject(self.vtk_mesh)
         u = np.asarray(dd.PointData["activation"], dtype=float)
         return self.lead.ecg_from_activation(
             u, record_array=record_array, lead_field=self.lead_field
         )
 
-    def save_pv(self, fname):
+    def save_pv(self, fname: str) -> None:
+        """Save the myocardium mesh to a VTK file via PyVista."""
         pv.UnstructuredGrid(self.vtk_mesh).save(fname)
