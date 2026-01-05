@@ -8,7 +8,7 @@ The repository bundles a guided quickstart in two formats:
 
 * :download:`00_build_mesh_and_lead_field.ipynb <../00_build_mesh_and_lead_field.ipynb>`
   walks through mesh loading, Purkinje UV tree ingestion, PMJ embedding, lead-field
-  computation, and PyVista visualisation.
+  computation, and PyVista visualization.
 * ``examples/build_mesh_and_lead_field.py`` is a CLI-friendly version that can run
   headless smoke tests (``--skip-plot``) or emit a screenshot by default.
 
