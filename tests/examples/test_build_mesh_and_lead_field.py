@@ -27,7 +27,7 @@ def test_build_mesh_and_lead_field_cli_smoke(tmp_path):
     )
     if result.returncode != 0:
         raise AssertionError(
-            f"Command failed with {result.returncode}\\nSTDOUT:\\n{result.stdout}\\nSTDERR:\\n{result.stderr}"
+            f"Command failed with {result.returncode}\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
         )
 
     assert (
@@ -55,7 +55,7 @@ def test_build_mesh_and_lead_field_with_plot(tmp_path):
     )
     if result.returncode != 0:
         raise AssertionError(
-            f"Command failed with {result.returncode}\\nSTDOUT:\\n{result.stdout}\\nSTDERR:\\n{result.stderr}"
+            f"Command failed with {result.returncode}\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
         )
 
     assert screenshot.exists(), "Screenshot should be created when plotting is enabled."
