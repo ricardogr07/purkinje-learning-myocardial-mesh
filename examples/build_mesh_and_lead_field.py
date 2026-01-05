@@ -7,7 +7,7 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 import sys
-from typing import Iterable, Tuple
+from typing import Iterable
 
 import numpy as np
 import pyvista as pv
@@ -64,7 +64,7 @@ def load_uv_tree(tree_path: Path) -> PurkinjeUVTree:
 
 def map_pmjs_to_myocardium(
     pmj_xyz: np.ndarray, myocardium: MyocardialMesh
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """Snap PMJ coordinates to the closest myocardial mesh nodes.
 
     Args:
@@ -94,9 +94,10 @@ def plot_activation(
     pmj_nodes: Iterable[int],
     screenshot_path: Path,
     *,
-    clim: Tuple[float, float] | None = None,
+    clim: tuple[float, float] | None = None,
 ) -> Path:
     """Plot the activation field with PMJs highlighted and save a screenshot."""
+    screenshot_path = Path(screenshot_path)  # Ensure Path type
     grid = pv.UnstructuredGrid(myocardium.vtk_mesh)
 
     act = np.asarray(grid.point_data["activation"], dtype=float)
@@ -140,7 +141,6 @@ def plot_activation(
         return screenshot_path
 
     if not pv.system_supports_plotting():  # pragma: no cover - environment-dependent
-        screenshot_path = Path(screenshot_path)
         return _matplotlib_fallback()
 
     try:
@@ -165,13 +165,12 @@ def plot_activation(
     )
     plotter.add_title("Activation field with PMJs", font_size=10)
 
-    screenshot_path = Path(screenshot_path)
     screenshot_path.parent.mkdir(parents=True, exist_ok=True)
     try:
         plotter.show(screenshot=str(screenshot_path), auto_close=True)
         LOGGER.info("Saved screenshot to %s", screenshot_path.resolve())
         return screenshot_path
-    except Exception as exc:  # pragma: no cover - environment-dependent
+    except (RuntimeError, OSError, ValueError) as exc:  # pragma: no cover - environment-dependent
         LOGGER.warning(
             "PyVista rendering failed (%s); falling back to a Matplotlib snapshot.", exc
         )
