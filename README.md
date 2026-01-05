@@ -72,6 +72,27 @@ print("Lead I peak amplitude:", ecg_leads[:, 0].max())
 
 ---
 
+## Examples
+
+- **Notebook**: `00_build_mesh_and_lead_field.ipynb` walks through loading the CRT demo
+  mesh, embedding a Purkinje UV tree, computing the lead field on CPU, and producing a
+  PyVista screenshot.
+- **Script**: run the same flow headlessly via
+  `python examples/build_mesh_and_lead_field.py --sample-pmjs 256`.
+
+---
+
+## Documentation
+
+Build the docs locally with:
+
+```bash
+pip install -e ".[docs]"
+sphinx-build -W -b html docs docs/_build/html
+```
+
+---
+
 ## Versioning & Release
 
 This project uses **release-please** to automate versioning and changelog

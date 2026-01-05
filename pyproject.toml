@@ -24,6 +24,12 @@ dependencies = [
     "fim-python",
 ]
 
+[project.optional-dependencies]
+docs = [
+  "sphinx>=7.0",
+  "furo>=2023.9.10",
+]
+
 [project.urls]
 "Homepage" = "https://github.com/ricardogr07/purkinje-learning-myocardial-mesh"
 "Repository" = "https://github.com/ricardogr07/purkinje-learning-myocardial-mesh"
